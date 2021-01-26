@@ -111,10 +111,14 @@ struct modbus_struct{
   uint16_t u16timeOut, u16time;
   uint8_t u8regsize;
   uint8_t flag;
-  union twobyte registers;
+  union twobyte holReg;
+  union twobyte inpReg;
   uint16_t time;
 };
 
 extern struct modbus_struct mb;
 
 int8_t mb_poll(void);
+void mb_sendTxBuffer(void);
+uint16_t word(uint8_t high, uint8_t low);
+uint8_t mb_validateRequest(void);

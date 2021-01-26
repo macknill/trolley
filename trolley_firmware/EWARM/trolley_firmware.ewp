@@ -226,6 +226,7 @@
                     <name>CCDefines</name>
                     <state>USE_STDPERIPH_DRIVER</state>
                     <state>STM32F401xx</state>
+                    <state>USE_HSE_BYPASS</state>
                 </option>
                 <option>
                     <name>CCPreprocFile</name>
@@ -658,7 +659,7 @@
                 </option>
                 <option>
                     <name>OOCOutputFile</name>
-                    <state>Project.srec</state>
+                    <state>trolley_firmware.srec</state>
                 </option>
                 <option>
                     <name>OOCCommandLineProducer</name>
@@ -10632,7 +10633,28 @@
     <group>
         <name>User</name>
         <file>
+            <name>$PROJ_DIR$\..\user\inits.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\user\inits.h</name>
+        </file>
+        <file>
             <name>$PROJ_DIR$\..\user\main.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\user\mb_regs.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\user\mbcrc.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\user\mbcrc.h</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\user\modbus.c</name>
+        </file>
+        <file>
+            <name>$PROJ_DIR$\..\user\modbus.h</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\user\stm32f4xx_it.c</name>

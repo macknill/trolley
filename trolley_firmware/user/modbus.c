@@ -1,7 +1,7 @@
 #include "modbus.h"
 #include "main.h"
 #include "mbcrc.h"
-#include "stm32f10x.h"
+#include "stm32f4xx.h"
 
 struct modbus_struct mb;
 
@@ -22,7 +22,7 @@ const unsigned char fctsupported[] =
 
 void mb_sendTxBuffer(void)
 {
-  uint16_t u16crc = calcCRC(&mb.u8BufferOut[0], mb.u16OutCnt );
+  /*uint16_t u16crc = calcCRC(&mb.u8BufferOut[0], mb.u16OutCnt );
   mb.u8BufferOut[ mb.u16OutCnt ] = lowByte(u16crc);
   mb.u16OutCnt++;
   mb.u8BufferOut[ mb.u16OutCnt ] = highByte(u16crc);
@@ -30,7 +30,7 @@ void mb_sendTxBuffer(void)
   RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
   DMA_SetCurrDataCounter(DMA1_Channel4, mb.u16OutCnt);
   DMA_Cmd(DMA1_Channel4, ENABLE);
-  mb.u16timeOut = 0;
+  mb.u16timeOut = 0;*/
   /*
   DMA1_Channel4->CCR &=~ DMA_CCR_EN;      //выключение дћј
   DMA1_Channel4->CNDTR = mb.u16OutCnt;    //—колько байт надо отправить?
@@ -120,7 +120,7 @@ uint8_t mb_validateRequest(void)
  * @return u8BufferOutSize Response to master length
  * @ingroup register
  */
-int8_t process_FC3( uint16_t *regs, uint8_t u8size )
+static int8_t process_FC3( uint16_t *regs, uint8_t u8size )
 {
 
     uint8_t u8StartAdd = word( mb.u8BufferIn[ ADD_HI ], mb.u8BufferIn[ ADD_LO ] );
@@ -152,14 +152,14 @@ int8_t process_FC3( uint16_t *regs, uint8_t u8size )
  * @return u8BufferOutSize Response to master length
  * @ingroup register
  */
-int8_t process_FC6( uint16_t *regs, uint8_t u8size )
+static int8_t process_FC6( uint16_t *regs, uint8_t u8size )
 {
 
     uint8_t u8add = word( mb.u8BufferIn[ ADD_HI ],  mb.u8BufferIn[ ADD_LO ] );
     uint8_t u8CopyBufferSize;
     uint16_t u16val = word( mb.u8BufferIn[ NB_HI ], mb.u8BufferIn[ NB_LO ] );
 
-    mb.registers.one[ u8add ] = u16val;
+    regs[ u8add ] = u16val;
     if (u8add < SAVE_REGISTERS_SIZE) mb.flag |= 0x02;
     
 
@@ -182,7 +182,7 @@ int8_t process_FC6( uint16_t *regs, uint8_t u8size )
  * @return u8BufferOutSize Response to master length
  * @ingroup register
  */
-int8_t process_FC16( uint16_t *regs, uint8_t u8size )
+static int8_t process_FC16( uint16_t *regs, uint8_t u8size )
 {
     uint8_t u8StartAdd = mb.u8BufferIn[ ADD_HI ] << 8 | mb.u8BufferIn[ ADD_LO ];
     uint8_t u8regsno = mb.u8BufferIn[ NB_HI ] << 8 | mb.u8BufferIn[ NB_LO ];
@@ -210,27 +210,7 @@ int8_t process_FC16( uint16_t *regs, uint8_t u8size )
     return u8CopyBufferSize;
 }
 
-
-int8_t processes_bootloader( uint16_t *regs, uint8_t u8size )
-{
-    uint8_t u8func = mb.u8BufferIn[ FUNC ];  // get the original FUNC code
-    
-    switch (u8func)
-    {
-      case MB_FC_REBOOT:
-        mb.u8BufferOut[ 2 ]   = 0;
-        mb.u8BufferOut[ 3 ]   = 1;
-        mb.u16OutCnt  = 4;
-        mb.flag |= 4;   //reboot;
-        break;
-    }
-    
-    mb_sendTxBuffer();
-
-    return  mb.u16OutCnt;
-}
-
-void mb_buildException( uint8_t u8exception )
+static void mb_buildException( uint8_t u8exception )
 {
     uint8_t u8func = mb.u8BufferIn[ FUNC ];  // get the original FUNC code
 
@@ -270,29 +250,22 @@ int8_t mb_poll(void)
   //    return process_FC1( regs, u8size );
   //    break;
   case MB_FC_READ_INPUT_REGISTER:
+      return process_FC3( &mb.inpReg.one[0], mb.u8regsize );
+      break;
   case MB_FC_READ_REGISTERS :
-      return process_FC3( &mb.registers.one[0], mb.u8regsize );
+      return process_FC3( &mb.holReg.one[0], mb.u8regsize );
       break;
   //case MB_FC_WRITE_COIL:
   //    return process_FC5( regs, u8size );
   //    break;
   case MB_FC_WRITE_REGISTER :
-      return process_FC6( &mb.registers.one[0], mb.u8regsize );
+      return process_FC6( &mb.holReg.one[0], mb.u8regsize );
       break;
   //case MB_FC_WRITE_MULTIPLE_COILS:
   //    return process_FC15( regs, u8size );
   //    break;
   case MB_FC_WRITE_MULTIPLE_REGISTERS :
-      return process_FC16( &mb.registers.one[0], mb.u8regsize );
-      break;
-  case MB_FC_REBOOT :
-      return processes_bootloader( &mb.registers.one[0], mb.u8regsize );
-      break;
-  case MB_FC_LENGHT_FIRMWARE :
-      return processes_bootloader( &mb.registers.one[0], mb.u8regsize );
-      break;
-  case MB_FC_FIRMWARE_PART :
-      return processes_bootloader( &mb.registers.one[0], mb.u8regsize );
+      return process_FC16( &mb.holReg.one[0], mb.u8regsize );
       break;
   default:
       break;

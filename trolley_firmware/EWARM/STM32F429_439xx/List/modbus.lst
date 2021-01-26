@@ -1,0 +1,352 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V8.50.1.245/W32 for ARM         26/Jan/2021  22:04:06
+# Copyright 1999-2020 IAR Systems AB.
+#
+#    Cpu mode             
+#    Endian            =  little
+#    Source file       =  E:\github\trolley\trolley_firmware\user\modbus.c
+#    Command line      =
+#        -f C:\Users\rudabo\AppData\Local\Temp\EW2414.tmp
+#        (E:\github\trolley\trolley_firmware\user\modbus.c -D
+#        USE_STDPERIPH_DRIVER -D STM32F401xx -D USE_HSE_BYPASS -lcN
+#        E:\github\trolley\trolley_firmware\EWARM\STM32F429_439xx\List -o
+#        E:\github\trolley\trolley_firmware\EWARM\STM32F429_439xx\Obj --debug
+#        --endian=little --cpu=Cortex-M4 -e --fpu=VFPv4_sp --dlib_config
+#        "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        8.4\arm\inc\c\DLib_Config_Full.h" -I
+#        E:\github\trolley\trolley_firmware\EWARM\..\ -I
+#        E:\github\trolley\trolley_firmware\EWARM\..\Libraries\CMSIS\Device\ST\STM32F4xx\Include\
+#        -I E:\github\trolley\trolley_firmware\EWARM\..\user\ -I
+#        E:\github\trolley\trolley_firmware\EWARM\..\Libraries\STM32F4xx_StdPeriph_Driver\inc\
+#        -I
+#        E:\github\trolley\trolley_firmware\EWARM\..\Utilities\STM32_EVAL\Common\
+#        -Ohz --use_c++_inline --require_prototypes -I "C:\Program Files
+#        (x86)\IAR Systems\Embedded Workbench 8.4\arm\CMSIS\Core\Include\" -I
+#        "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        8.4\arm\CMSIS\DSP\Include\")
+#    Locale            =  C
+#    List file         =
+#        E:\github\trolley\trolley_firmware\EWARM\STM32F429_439xx\List\modbus.lst
+#    Object file       =
+#        E:\github\trolley\trolley_firmware\EWARM\STM32F429_439xx\Obj\modbus.o
+#    Runtime model:       
+#      __SystemLibrary =  DLib
+#      __dlib_version  =  6
+#
+###############################################################################
+
+E:\github\trolley\trolley_firmware\user\modbus.c
+      1          #include "modbus.h"
+      2          #include "main.h"
+      3          #include "mbcrc.h"
+      4          #include "stm32f4xx.h"
+      5          
+      6          struct modbus_struct mb;
+      7          
+      8          const unsigned char fctsupported[] =
+      9          {
+     10              //MB_FC_READ_COILS,
+     11              //MB_FC_READ_DISCRETE_INPUT,
+     12              MB_FC_READ_REGISTERS,
+     13              MB_FC_READ_INPUT_REGISTER,
+     14              //MB_FC_WRITE_COIL,
+     15              MB_FC_WRITE_REGISTER,
+     16              //MB_FC_WRITE_MULTIPLE_COILS,
+     17              MB_FC_WRITE_MULTIPLE_REGISTERS,
+     18              MB_FC_REBOOT,
+     19              //MB_FC_LENGHT_FIRMWARE,
+     20              //MB_FC_FIRMWARE_PART
+     21          };
+     22          
+     23          void mb_sendTxBuffer(void)
+     24          {
+     25            /*uint16_t u16crc = calcCRC(&mb.u8BufferOut[0], mb.u16OutCnt );
+     26            mb.u8BufferOut[ mb.u16OutCnt ] = lowByte(u16crc);
+     27            mb.u16OutCnt++;
+     28            mb.u8BufferOut[ mb.u16OutCnt ] = highByte(u16crc);
+     29            mb.u16OutCnt++;
+     30            RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
+     31            DMA_SetCurrDataCounter(DMA1_Channel4, mb.u16OutCnt);
+     32            DMA_Cmd(DMA1_Channel4, ENABLE);
+     33            mb.u16timeOut = 0;*/
+     34            /*
+     35            DMA1_Channel4->CCR &=~ DMA_CCR_EN;      //выключение дћј
+     36            DMA1_Channel4->CNDTR = mb.u16OutCnt;    //—колько байт надо отправить?
+     37            DMA1_Channel4->CCR |= DMA_CCR_EN;       //начало отправки
+     38            */
+     39          }
+     40          
+     41          uint16_t word(uint8_t high, uint8_t low)
+     42          {
+     43              return ((uint16_t)(high) << 8) | low;
+     44          }
+     45              
+     46          uint8_t mb_validateRequest(void)
+     47          {
+     48              // check message crc vs calculated crc
+     49              volatile uint16_t u16CalcCRC = calcCRC( &mb.u8BufferIn[0], mb.u16InCnt - 2 ); // combine the crc Low & High bytes
+     50              volatile uint16_t u16MsgCRC = word(mb.u8BufferIn[mb.u16InCnt - 1], mb.u8BufferIn[mb.u16InCnt - 2]); // combine the crc Low & High bytes
+     51              if (u16CalcCRC != u16MsgCRC)
+     52              {
+     53                  mb.u16errCnt ++;
+     54                  return NO_REPLY;
+     55              }
+     56          
+     57              // check fct code
+     58              uint8_t isSupported = 0;
+     59              for (uint8_t i = 0; i< sizeof( fctsupported ); i++)
+     60              {
+     61                  if (fctsupported[i] == mb.u8BufferIn[FUNC])
+     62                  {
+     63                      isSupported = 1;
+     64                      break;
+     65                  }
+     66              }
+     67              if (!isSupported)
+     68              {
+     69                  mb.u16errCnt ++;
+     70                  return EXC_FUNC_CODE;
+     71              }
+     72          
+     73              // check start address & nb range
+     74              uint16_t u16regs = 0;
+     75              uint8_t u8regs;
+     76              switch ( mb.u8BufferIn[ FUNC ] )
+     77              {
+     78              /*case MB_FC_READ_COILS:
+     79              case MB_FC_READ_DISCRETE_INPUT:
+     80              case MB_FC_WRITE_MULTIPLE_COILS:
+     81                  u16regs = word( au8Buffer[ ADD_HI ], au8Buffer[ ADD_LO ]) / 16;
+     82                  u16regs += word( au8Buffer[ NB_HI ], au8Buffer[ NB_LO ]) /16;
+     83                  u8regs = (uint8_t) u16regs;
+     84                  if (u8regs > u8regsize) return EXC_ADDR_RANGE;
+     85                  break;
+     86              case MB_FC_WRITE_COIL:
+     87                  u16regs = word( au8Buffer[ ADD_HI ], au8Buffer[ ADD_LO ]) / 16;
+     88                  u8regs = (uint8_t) u16regs;
+     89                  if (u8regs > u8regsize) return EXC_ADDR_RANGE;
+     90                  break;*/
+     91              case MB_FC_WRITE_REGISTER :
+     92                  u16regs = word( mb.u8BufferIn[ ADD_HI ], mb.u8BufferIn[ ADD_LO ]);
+     93                  u8regs = (uint8_t) u16regs;
+     94                  if (u8regs > mb.u8regsize) return EXC_ADDR_RANGE;
+     95                  break;
+     96              case MB_FC_READ_REGISTERS :
+     97              case MB_FC_READ_INPUT_REGISTER :
+     98              case MB_FC_WRITE_MULTIPLE_REGISTERS :
+     99                  u16regs = word( mb.u8BufferIn[ ADD_HI ], mb.u8BufferIn[ ADD_LO ]);
+    100                  u16regs += word( mb.u8BufferIn[ NB_HI ], mb.u8BufferIn[ NB_LO ]);
+    101                  u8regs = (uint8_t) u16regs;
+    102                  if (u8regs > mb.u8regsize) return EXC_ADDR_RANGE;
+    103                  break;
+    104            /*      
+    105              case MB_FC_REBOOT:
+    106              case MB_FC_LENGHT_FIRMWARE:
+    107              case MB_FC_FIRMWARE_PART:
+    108                  mb.u16speed = 0;
+    109                  break;*/
+    110              }
+    111              
+    112              return 0; // OK, no exception code thrown
+    113          }
+    114                
+    115          /**
+    116           * @brief
+    117           * This method processes functions 3 & 4
+    118           * This method reads a word array and transfers it to the master
+    119           *
+    120           * @return u8BufferOutSize Response to master length
+    121           * @ingroup register
+    122           */
+    123          static int8_t process_FC3( uint16_t *regs, uint8_t u8size )
+    124          {
+    125          
+    126              uint8_t u8StartAdd = word( mb.u8BufferIn[ ADD_HI ], mb.u8BufferIn[ ADD_LO ] );
+    127              uint8_t u8regsno = word( mb.u8BufferIn[ NB_HI ], mb.u8BufferIn[ NB_LO ] );
+    128              uint8_t u8CopyBufferSize;
+    129              uint8_t i;
+    130              mb.u8BufferOut[ 2 ]       = u8regsno * 2;
+    131              mb.u16OutCnt         = 3;
+    132          
+    133              for (i = u8StartAdd; i < u8StartAdd + u8regsno; i++)
+    134              {
+    135                  mb.u8BufferOut[ mb.u16OutCnt ] = highByte(regs[i]);
+    136                  mb.u16OutCnt++;
+    137                  mb.u8BufferOut[ mb.u16OutCnt ] = lowByte(regs[i]);
+    138                  mb.u16OutCnt++;
+    139              }
+    140              u8CopyBufferSize = mb.u16OutCnt +2;
+    141              mb_sendTxBuffer();
+    142          
+    143              return u8CopyBufferSize;
+    144          }
+    145          
+    146          
+    147          /**
+    148           * @brief
+    149           * This method processes function 6
+    150           * This method writes a value assigned by the master to a single word
+    151           *
+    152           * @return u8BufferOutSize Response to master length
+    153           * @ingroup register
+    154           */
+    155          static int8_t process_FC6( uint16_t *regs, uint8_t u8size )
+    156          {
+    157          
+    158              uint8_t u8add = word( mb.u8BufferIn[ ADD_HI ],  mb.u8BufferIn[ ADD_LO ] );
+    159              uint8_t u8CopyBufferSize;
+    160              uint16_t u16val = word( mb.u8BufferIn[ NB_HI ], mb.u8BufferIn[ NB_LO ] );
+    161          
+    162              regs[ u8add ] = u16val;
+    163              if (u8add < SAVE_REGISTERS_SIZE) mb.flag |= 0x02;
+    164              
+    165          
+    166              // keep the same header
+    167              mb.u16OutCnt         = RESPONSE_SIZE;
+    168          
+    169              u8CopyBufferSize = mb.u16OutCnt +2;
+    170              mb_sendTxBuffer();
+    171          
+    172              return u8CopyBufferSize;
+    173          }
+    174          
+    175          
+    176          
+    177          /**
+    178           * @brief
+    179           * This method processes function 16
+    180           * This method writes a word array assigned by the master
+    181           *
+    182           * @return u8BufferOutSize Response to master length
+    183           * @ingroup register
+    184           */
+    185          static int8_t process_FC16( uint16_t *regs, uint8_t u8size )
+    186          {
+    187              uint8_t u8StartAdd = mb.u8BufferIn[ ADD_HI ] << 8 | mb.u8BufferIn[ ADD_LO ];
+    188              uint8_t u8regsno = mb.u8BufferIn[ NB_HI ] << 8 | mb.u8BufferIn[ NB_LO ];
+    189              uint8_t u8CopyBufferSize;
+    190              uint8_t i;
+    191              uint16_t temp;
+    192              if (u8StartAdd < SAVE_REGISTERS_SIZE) mb.flag |= 0x02;
+    193              // build header
+    194              mb.u8BufferOut[ NB_HI ]   = 0;
+    195              mb.u8BufferOut[ NB_LO ]   = u8regsno;
+    196              mb.u16OutCnt         = RESPONSE_SIZE;
+    197          
+    198              // write registers
+    199              for (i = 0; i < u8regsno; i++)
+    200              {
+    201                  temp = word(
+    202                             mb.u8BufferIn[ (BYTE_CNT + 1) + i * 2 ],
+    203                             mb.u8BufferIn[ (BYTE_CNT + 2) + i * 2 ]);
+    204          
+    205                  regs[ u8StartAdd + i ] = temp;
+    206              }
+    207              u8CopyBufferSize = mb.u16OutCnt +2;
+    208              mb_sendTxBuffer();
+    209          
+    210              return u8CopyBufferSize;
+    211          }
+    212          
+    213          static void mb_buildException( uint8_t u8exception )
+    214          {
+    215              uint8_t u8func = mb.u8BufferIn[ FUNC ];  // get the original FUNC code
+    216          
+    217              mb.u8BufferOut[ ID ]      = mb.u8id;
+    218              mb.u8BufferOut[ FUNC ]    = u8func + 0x80;
+    219              mb.u8BufferOut[ 2 ]       = u8exception;
+    220              mb.u16OutCnt         = EXCEPTION_SIZE;
+    221          }
+    222          
+    223          int8_t mb_poll(void)
+    224          {
+    225            if (mb.u16InCnt < 4)  return 0;
+    226            
+    227            // check slave id
+    228            if (mb.u8BufferIn[ ID ] != mb.u8id) return 0;
+    229              
+    230            // validate message: CRC, FCT, address and size
+    231            uint8_t u8exception = mb_validateRequest();
+    232            if (u8exception > 0)
+    233            {
+    234                if (u8exception != NO_REPLY)
+    235                {
+    236                    mb_buildException( u8exception );
+    237                    mb_sendTxBuffer();
+    238                }
+    239                mb.u8lastError = u8exception;
+    240                return u8exception;
+    241            }
+    242            // process message
+    243            mb.u8BufferOut[0] = mb.u8BufferIn[ID];
+    244            mb.u8BufferOut[1] = mb.u8BufferIn[FUNC];
+    245            
+    246            switch( mb.u8BufferIn[ FUNC ] )
+    247            {
+    248            //case MB_FC_READ_COILS:
+    249            //case MB_FC_READ_DISCRETE_INPUT:
+    250            //    return process_FC1( regs, u8size );
+    251            //    break;
+    252            case MB_FC_READ_INPUT_REGISTER:
+    253                return process_FC3( &mb.inpReg.one[0], mb.u8regsize );
+    254                break;
+    255            case MB_FC_READ_REGISTERS :
+    256                return process_FC3( &mb.holReg.one[0], mb.u8regsize );
+    257                break;
+    258            //case MB_FC_WRITE_COIL:
+    259            //    return process_FC5( regs, u8size );
+    260            //    break;
+    261            case MB_FC_WRITE_REGISTER :
+    262                return process_FC6( &mb.holReg.one[0], mb.u8regsize );
+    263                break;
+    264            //case MB_FC_WRITE_MULTIPLE_COILS:
+    265            //    return process_FC15( regs, u8size );
+    266            //    break;
+    267            case MB_FC_WRITE_MULTIPLE_REGISTERS :
+    268                return process_FC16( &mb.holReg.one[0], mb.u8regsize );
+    269                break;
+    270            default:
+    271                break;
+    272            }
+    273            return 1;
+    274          }
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+      24   mb_poll
+        24   -> mb_validateRequest
+         0   -> process_FC3
+       0   mb_sendTxBuffer
+      24   mb_validateRequest
+        24   -> calcCRC
+      24   process_FC3
+        24   -> word
+       0   word
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable4
+      12  ?Subroutine0
+       8  fctsupported
+     928  mb
+     200  mb_poll
+       2  mb_sendTxBuffer
+     144  mb_validateRequest
+      94  process_FC3
+       6  word
+
+ 
+ 928 bytes in section .bss
+ 470 bytes in section .text
+ 
+ 470 bytes of CODE memory
+ 928 bytes of DATA memory
+
+Errors: none
+Warnings: 1

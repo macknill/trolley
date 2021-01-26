@@ -1,0 +1,192 @@
+###############################################################################
+#
+# IAR ANSI C/C++ Compiler V8.50.1.245/W32 for ARM         26/Jan/2021  23:12:11
+# Copyright 1999-2020 IAR Systems AB.
+#
+#    Cpu mode             
+#    Endian            =  little
+#    Source file       =  E:\github\trolley\trolley_firmware\user\main.c
+#    Command line      =
+#        -f C:\Users\rudabo\AppData\Local\Temp\EW7B29.tmp
+#        (E:\github\trolley\trolley_firmware\user\main.c -D
+#        USE_STDPERIPH_DRIVER -D STM32F401xx -D USE_HSE_BYPASS -lcN
+#        E:\github\trolley\trolley_firmware\EWARM\STM32F429_439xx\List -o
+#        E:\github\trolley\trolley_firmware\EWARM\STM32F429_439xx\Obj --debug
+#        --endian=little --cpu=Cortex-M4 -e --fpu=VFPv4_sp --dlib_config
+#        "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        8.4\arm\inc\c\DLib_Config_Full.h" -I
+#        E:\github\trolley\trolley_firmware\EWARM\..\ -I
+#        E:\github\trolley\trolley_firmware\EWARM\..\Libraries\CMSIS\Device\ST\STM32F4xx\Include\
+#        -I E:\github\trolley\trolley_firmware\EWARM\..\user\ -I
+#        E:\github\trolley\trolley_firmware\EWARM\..\Libraries\STM32F4xx_StdPeriph_Driver\inc\
+#        -I
+#        E:\github\trolley\trolley_firmware\EWARM\..\Utilities\STM32_EVAL\Common\
+#        -Ohz --use_c++_inline --require_prototypes -I "C:\Program Files
+#        (x86)\IAR Systems\Embedded Workbench 8.4\arm\CMSIS\Core\Include\" -I
+#        "C:\Program Files (x86)\IAR Systems\Embedded Workbench
+#        8.4\arm\CMSIS\DSP\Include\")
+#    Locale            =  C
+#    List file         =
+#        E:\github\trolley\trolley_firmware\EWARM\STM32F429_439xx\List\main.lst
+#    Object file       =
+#        E:\github\trolley\trolley_firmware\EWARM\STM32F429_439xx\Obj\main.o
+#    Runtime model:       
+#      __SystemLibrary =  DLib
+#      __dlib_version  =  6
+#
+###############################################################################
+
+E:\github\trolley\trolley_firmware\user\main.c
+      1          /* Includes ------------------------------------------------------------------*/
+      2          #include "main.h"
+      3          #include "inits.h"
+      4          #include "modbus.h"
+      5          
+      6          static __IO uint32_t uwTimingDelay;
+      7          RCC_ClocksTypeDef RCC_Clocks;
+      8          
+      9          /* Private function prototypes -----------------------------------------------*/
+     10          static void Delay(__IO uint32_t nTime);
+     11          
+     12          /* Private functions ---------------------------------------------------------*/
+     13          
+     14          /**
+     15            * @brief  Main program
+     16            * @param  None
+     17            * @retval None
+     18            */
+     19            volatile uint8_t lol = 0;
+     20          int main(void)
+     21          {
+     22            GPIO_InitTypeDef GPIO_InitStructure;
+     23            //SysTick end of count event each 10ms
+     24            RCC_GetClocksFreq(&RCC_Clocks);
+     25            SysTick_Config(RCC_Clocks.HCLK_Frequency / 1000);
+     26            
+     27            //Insert 50 ms delay
+     28            Delay(50);
+     29            
+     30            RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
+     31            
+     32            GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
+     33            GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
+     34            GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+     35            GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;  
+     36            GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+     37            GPIO_Init(GPIOA, &GPIO_InitStructure);
+     38            GPIO_WriteBit(GPIOA, GPIO_Pin_5, Bit_SET);
+     39            
+     40            
+     41            init_modbus(115200);   
+     42            uint8_t toggle = 0;
+     43                GPIO_WriteBit(GPIOA, GPIO_Pin_5, Bit_RESET);
+     44            while (1)
+     45            {
+     46              
+     47              /*if (toggle)
+     48                toggle = 0;
+     49              else
+     50                toggle = 1;*/
+     51              
+     52              if (USART2->SR & USART_FLAG_RXNE)
+     53              {
+     54                lol = USART2->DR;
+     55                if (USART2->SR & USART_FLAG_TXE)
+     56                {
+     57                  USART2->DR = lol;  
+     58                  while ((USART2->SR & USART_FLAG_TC) == 0);
+     59                }
+     60                
+     61                lol++;
+     62                GPIO_WriteBit(GPIOA, GPIO_Pin_5, Bit_SET);
+     63                Delay(50);
+     64                GPIO_WriteBit(GPIOA, GPIO_Pin_5, Bit_RESET);
+     65              }
+     66            }
+     67          }
+     68          
+     69          void Delay(__IO uint32_t nTime)
+     70          { 
+     71            uwTimingDelay = nTime;
+     72          
+     73            while(uwTimingDelay != 0);
+     74          }
+     75          
+     76          /**
+     77            * @brief  Decrements the TimingDelay variable.
+     78            * @param  None
+     79            * @retval None
+     80            */
+     81          void TimingDelay_Decrement(void)
+     82          {
+     83            if (uwTimingDelay != 0x00)
+     84            { 
+     85              uwTimingDelay--;
+     86            }
+     87          }
+     88          
+     89          #ifdef  USE_FULL_ASSERT
+     90          
+     91          /**
+     92            * @brief  Reports the name of the source file and the source line number
+     93            *         where the assert_param error has occurred.
+     94            * @param  file: pointer to the source file name
+     95            * @param  line: assert_param error line source number
+     96            * @retval None
+     97            */
+     98          void assert_failed(uint8_t* file, uint32_t line)
+     99          { 
+    100            /* User can add his own implementation to report the file name and line number,
+    101               ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+    102          
+    103            /* Infinite loop */
+    104            while (1)
+    105            {
+    106            }
+    107          }
+    108          #endif
+    109          
+    110          /**
+    111            * @}
+    112            */
+    113          
+    114          
+    115          /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
+
+   Maximum stack usage in bytes:
+
+   .cstack Function
+   ------- --------
+       0   TimingDelay_Decrement
+      32   main
+        32   -> GPIO_Init
+        32   -> GPIO_WriteBit
+        32   -> RCC_AHB1PeriphClockCmd
+        32   -> RCC_GetClocksFreq
+        32   -> init_modbus
+
+
+   Section sizes:
+
+   Bytes  Function/Label
+   -----  --------------
+       4  ??DataTable1
+       4  ??DataTable1_1
+       4  ??DataTable1_2
+       4  ??DataTable1_3
+       4  ??DataTable1_4
+      14  TimingDelay_Decrement
+      24  lol
+          RCC_Clocks
+          uwTimingDelay
+     188  main
+
+ 
+  24 bytes in section .bss
+ 222 bytes in section .text
+ 
+ 222 bytes of CODE memory
+  24 bytes of DATA memory
+
+Errors: none
+Warnings: 1
