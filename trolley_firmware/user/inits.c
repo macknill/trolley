@@ -70,11 +70,17 @@ void init_modbus(uint32_t speed)
   DMA_InitStructure.DMA_DIR = DMA_DIR_MemoryToPeripheral ;
   DMA_InitStructure.DMA_Memory0BaseAddr =(uint32_t)mb.u8BufferOut ;
   DMA_Init(USARTx_TX_DMA_STREAM,&DMA_InitStructure);
+  
+  DMA_Cmd(USARTx_TX_DMA_STREAM, ENABLE);
   /* Configure RX DMA */
   DMA_InitStructure.DMA_Channel = USARTx_RX_DMA_CHANNEL ;
   DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralToMemory ;
   DMA_InitStructure.DMA_Memory0BaseAddr =(uint32_t)mb.u8BufferIn ; 
   DMA_Init(USARTx_RX_DMA_STREAM,&DMA_InitStructure);
+  DMA_Cmd(USARTx_RX_DMA_STREAM, ENABLE);  
+  
+  USART_DMACmd(USARTx, USART_DMAReq_Rx, ENABLE);  
+  USART_DMACmd(USARTx, USART_DMAReq_Tx, ENABLE);
   
   USART_Cmd(USARTx, ENABLE);  
   mb.u8regsize = REGISTERS_SIZE;

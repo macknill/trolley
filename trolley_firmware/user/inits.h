@@ -30,21 +30,21 @@ void init_adc(void);
    
 #define USARTx_TX_DMA_CHANNEL            DMA_Channel_4
 #define USARTx_TX_DMA_STREAM             DMA1_Stream6
-#define USARTx_TX_DMA_FLAG_FEIF          DMA_FLAG_FEIF3
-#define USARTx_TX_DMA_FLAG_DMEIF         DMA_FLAG_DMEIF3
-#define USARTx_TX_DMA_FLAG_TEIF          DMA_FLAG_TEIF3
-#define USARTx_TX_DMA_FLAG_HTIF          DMA_FLAG_HTIF3
-#define USARTx_TX_DMA_FLAG_TCIF          DMA_FLAG_TCIF3
+#define USARTx_TX_DMA_FLAG_FEIF          DMA_FLAG_FEIF6
+#define USARTx_TX_DMA_FLAG_DMEIF         DMA_FLAG_DMEIF6
+#define USARTx_TX_DMA_FLAG_TEIF          DMA_FLAG_TEIF6
+#define USARTx_TX_DMA_FLAG_HTIF          DMA_FLAG_HTIF6
+#define USARTx_TX_DMA_FLAG_TCIF          DMA_FLAG_TCIF6
             
 #define USARTx_RX_DMA_CHANNEL            DMA_Channel_4
 #define USARTx_RX_DMA_STREAM             DMA1_Stream5
-#define USARTx_RX_DMA_FLAG_FEIF          DMA_FLAG_FEIF1
-#define USARTx_RX_DMA_FLAG_DMEIF         DMA_FLAG_DMEIF1
-#define USARTx_RX_DMA_FLAG_TEIF          DMA_FLAG_TEIF1
-#define USARTx_RX_DMA_FLAG_HTIF          DMA_FLAG_HTIF1
-#define USARTx_RX_DMA_FLAG_TCIF          DMA_FLAG_TCIF1
+#define USARTx_RX_DMA_FLAG_FEIF          DMA_FLAG_FEIF5
+#define USARTx_RX_DMA_FLAG_DMEIF         DMA_FLAG_DMEIF5
+#define USARTx_RX_DMA_FLAG_TEIF          DMA_FLAG_TEIF5
+#define USARTx_RX_DMA_FLAG_HTIF          DMA_FLAG_HTIF5
+#define USARTx_RX_DMA_FLAG_TCIF          DMA_FLAG_TCIF5
 
 #define USARTx_DMA_TX_IRQn               DMA1_Stream6_IRQn
-#define USARTx_DMA_RX_IRQn               DMA1_Stream5_IRQn
 #define USARTx_DMA_TX_IRQHandler         DMA1_Stream6_IRQHandler
+#define USARTx_DMA_RX_IRQn               DMA1_Stream5_IRQn
 #define USARTx_DMA_RX_IRQHandler         DMA1_Stream5_IRQHandler

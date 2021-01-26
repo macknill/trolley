@@ -41,6 +41,8 @@ int main(void)
   init_modbus(115200);   
   uint8_t toggle = 0;
       GPIO_WriteBit(GPIOA, GPIO_Pin_5, Bit_RESET);
+  for (uint8_t cnt = 0; cnt < 10; cnt++)
+    mb.u8BufferOut[cnt] = cnt + 'a';
   while (1)
   {
     
@@ -49,7 +51,18 @@ int main(void)
     else
       toggle = 1;*/
     
-    if (USART2->SR & USART_FLAG_RXNE)
+    Delay(500);
+    DMA_ClearFlag(USARTx_TX_DMA_STREAM,USARTx_TX_DMA_FLAG_TCIF);
+    USART_ClearFlag(USARTx,USART_FLAG_TC); 
+    DMA_SetCurrDataCounter(USARTx_TX_DMA_STREAM, 10);
+    DMA_Cmd(USARTx_TX_DMA_STREAM, ENABLE);
+    /*USART_DMACmd(USARTx, USART_DMAReq_Rx, ENABLE);
+    */
+    GPIO_WriteBit(GPIOA, GPIO_Pin_5, Bit_SET);
+    Delay(50);
+    GPIO_WriteBit(GPIOA, GPIO_Pin_5, Bit_RESET);
+    
+    /*if (USART2->SR & USART_FLAG_RXNE)
     {
       lol = USART2->DR;
       if (USART2->SR & USART_FLAG_TXE)
@@ -62,7 +75,7 @@ int main(void)
       GPIO_WriteBit(GPIOA, GPIO_Pin_5, Bit_SET);
       Delay(50);
       GPIO_WriteBit(GPIOA, GPIO_Pin_5, Bit_RESET);
-    }
+    }*/
   }
 }
 
