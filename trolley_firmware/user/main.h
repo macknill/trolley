@@ -32,12 +32,13 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx.h"
 
-
+extern RCC_ClocksTypeDef RCC_Clocks;
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
 void TimingDelay_Decrement(void);
+void mb_transmit_func(uint16_t lenght);
 
 #endif /* __MAIN_H */
 

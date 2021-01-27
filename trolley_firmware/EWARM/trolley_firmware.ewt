@@ -13864,7 +13864,7 @@
     <group>
         <name>CMSIS</name>
         <file>
-            <name>$EW_DIR$\arm\src\flashloader\ST\FlashSTM32F4xx\inc\stm32f4xx.h</name>
+            <name>$PROJ_DIR$\..\Libraries\CMSIS\Device\ST\STM32F4xx\Include\stm32f4xx.h</name>
         </file>
         <file>
             <name>$PROJ_DIR$\..\user\system_stm32f4xx.c</name>
@@ -13878,6 +13878,9 @@
     </group>
     <group>
         <name>STM32F4xx_StdPeriph_Driver</name>
+        <file>
+            <name>$PROJ_DIR$\..\Libraries\STM32F4xx_StdPeriph_Driver\src\misc.c</name>
+        </file>
         <file>
             <name>$PROJ_DIR$\..\Libraries\STM32F4xx_StdPeriph_Driver\src\stm32f4xx_dma.c</name>
         </file>

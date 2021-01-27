@@ -30,6 +30,9 @@
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_it.h"
 #include "main.h"
+#include "modbus.h"
+#include "mb_regs.h"
+#include "inits.h"
 
 /** @addtogroup Template_Project
   * @{
@@ -45,7 +48,41 @@
 /******************************************************************************/
 /*            Cortex-M4 Processor Exceptions Handlers                         */
 /******************************************************************************/
+void USARTx_IRQHandler(void)
+{
+  if (USART_GetITStatus(USARTx, USART_IT_IDLE))
+  {    
+    USART2->DR;
+    USART_ClearFlag(USARTx, USART_FLAG_RXNE | USART_FLAG_IDLE);
+    mb.u16InCnt = BUFFER_RX_SIZE - DMA_GetCurrDataCounter(USARTx_RX_DMA_STREAM);
+    DMA_Cmd(USARTx_RX_DMA_STREAM, DISABLE);    
+    DMA_SetCurrDataCounter(USARTx_RX_DMA_STREAM, BUFFER_RX_SIZE);
+    DMA_ClearFlag(USARTx_RX_DMA_STREAM,USARTx_RX_DMA_FLAG_TCIF);
+    DMA_Cmd(USARTx_RX_DMA_STREAM, ENABLE);   
+    if (mb.u16InCnt > 0)
+      mb.flag |= 1;    
+  }
+  
+  if (USARTx->SR & USART_SR_ORE)
+  {
+    USART_ClearFlag(USARTx, USART_FLAG_ORE);
+    mb.inpReg.one[mbIregUartErr]++;
+  }      
+}
 
+void USARTx_DMA_TX_IRQHandler(void)
+{
+  if (DMA_GetFlagStatus(USARTx_TX_DMA_STREAM, USARTx_TX_DMA_FLAG_TCIF))
+  {
+    DMA_ClearFlag(USARTx_TX_DMA_STREAM,USARTx_TX_DMA_FLAG_TCIF);
+    DMA_ITConfig(USARTx_TX_DMA_STREAM, DMA_IT_TC, ENABLE); 
+    USART2->DR;
+    USART_ClearFlag(USARTx, USART_FLAG_RXNE | USART_FLAG_IDLE);
+    USART_ITConfig(USARTx, USART_IT_IDLE, ENABLE);
+  }   
+}
+    
+    
 /**
   * @brief  This function handles NMI exception.
   * @param  None

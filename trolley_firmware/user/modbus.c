@@ -21,21 +21,14 @@ const unsigned char fctsupported[] =
 };
 
 void mb_sendTxBuffer(void)
-{
-  /*uint16_t u16crc = calcCRC(&mb.u8BufferOut[0], mb.u16OutCnt );
+{  
+  uint16_t u16crc = calcCRC(&mb.u8BufferOut[0], mb.u16OutCnt );
   mb.u8BufferOut[ mb.u16OutCnt ] = lowByte(u16crc);
   mb.u16OutCnt++;
   mb.u8BufferOut[ mb.u16OutCnt ] = highByte(u16crc);
   mb.u16OutCnt++;
-  RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOA, ENABLE);
-  DMA_SetCurrDataCounter(DMA1_Channel4, mb.u16OutCnt);
-  DMA_Cmd(DMA1_Channel4, ENABLE);
-  mb.u16timeOut = 0;*/
-  /*
-  DMA1_Channel4->CCR &=~ DMA_CCR_EN;      //выключение дћј
-  DMA1_Channel4->CNDTR = mb.u16OutCnt;    //—колько байт надо отправить?
-  DMA1_Channel4->CCR |= DMA_CCR_EN;       //начало отправки
-  */
+  mb_transmit_func(mb.u16OutCnt);
+  mb.u16timeOut = 0;
 }
 
 uint16_t word(uint8_t high, uint8_t low)

@@ -2,6 +2,7 @@
 #include "main.h"
 #include "inits.h"
 #include "modbus.h"
+#include "mb_regs.h"
 
 static __IO uint32_t uwTimingDelay;
 RCC_ClocksTypeDef RCC_Clocks;
@@ -21,62 +22,50 @@ int main(void)
 {
   GPIO_InitTypeDef GPIO_InitStructure;
   //SysTick end of count event each 10ms
+  
   RCC_GetClocksFreq(&RCC_Clocks);
   SysTick_Config(RCC_Clocks.HCLK_Frequency / 1000);
   
   //Insert 50 ms delay
   Delay(50);
   
-  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
+  init_gpio();
   
-  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
-  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
-  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;  
-  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
-  GPIO_Init(GPIOA, &GPIO_InitStructure);
-  GPIO_WriteBit(GPIOA, GPIO_Pin_5, Bit_SET);
+  mb.u8id = 1;
+  init_modbus(115200); 
+  mb.holReg.one[mbHreg_PPM1] = 150;
+  mb.holReg.one[mbHreg_PPM2] = 150;
+  mb.holReg.one[mbHreg_PPM3] = 150;
+  init_ppm(); 
   
   
-  init_modbus(115200);   
-  uint8_t toggle = 0;
-      GPIO_WriteBit(GPIOA, GPIO_Pin_5, Bit_RESET);
-  for (uint8_t cnt = 0; cnt < 10; cnt++)
-    mb.u8BufferOut[cnt] = cnt + 'a';
   while (1)
   {
-    
-    /*if (toggle)
-      toggle = 0;
-    else
-      toggle = 1;*/
-    
-    Delay(500);
-    DMA_ClearFlag(USARTx_TX_DMA_STREAM,USARTx_TX_DMA_FLAG_TCIF);
-    USART_ClearFlag(USARTx,USART_FLAG_TC); 
-    DMA_SetCurrDataCounter(USARTx_TX_DMA_STREAM, 10);
-    DMA_Cmd(USARTx_TX_DMA_STREAM, ENABLE);
-    /*USART_DMACmd(USARTx, USART_DMAReq_Rx, ENABLE);
-    */
-    GPIO_WriteBit(GPIOA, GPIO_Pin_5, Bit_SET);
-    Delay(50);
-    GPIO_WriteBit(GPIOA, GPIO_Pin_5, Bit_RESET);
-    
-    /*if (USART2->SR & USART_FLAG_RXNE)
+    if (mb.flag & 1)
     {
-      lol = USART2->DR;
-      if (USART2->SR & USART_FLAG_TXE)
-      {
-        USART2->DR = lol;  
-        while ((USART2->SR & USART_FLAG_TC) == 0);
-      }
-      
-      lol++;
-      GPIO_WriteBit(GPIOA, GPIO_Pin_5, Bit_SET);
-      Delay(50);
-      GPIO_WriteBit(GPIOA, GPIO_Pin_5, Bit_RESET);
-    }*/
+      mb.flag &=~ 1;
+      if (mb_poll() == 0);
+    }
+    GPIO_WriteBit(GPIOA, GPIO_Pin_5, mb.holReg.one[mbHreg_ST_LED]);//read register
+    mb.inpReg.two[mbIreg_ST_LED] = GPIO_ReadOutputDataBit(GPIOA, GPIO_Pin_5);//write register
+    
+    if (mb.holReg.one[mbHreg_PPM1] < 90) mb.holReg.one[mbHreg_PPM1] = 90;
+    if (mb.holReg.one[mbHreg_PPM1] > 210) mb.holReg.one[mbHreg_PPM1] = 210;
+    PPM_TIMER->CCR1 = mb.holReg.one[mbHreg_PPM1];                       
+    if (mb.holReg.one[mbHreg_PPM2] < 90) mb.holReg.one[mbHreg_PPM2] = 90;
+    if (mb.holReg.one[mbHreg_PPM2] > 210) mb.holReg.one[mbHreg_PPM2] = 210;
+    PPM_TIMER->CCR3 = mb.holReg.one[mbHreg_PPM2];
+    if (mb.holReg.one[mbHreg_PPM3] < 90) mb.holReg.one[mbHreg_PPM3] = 90;
+    if (mb.holReg.one[mbHreg_PPM3] > 210) mb.holReg.one[mbHreg_PPM3] = 210;
+    PPM_TIMER->CCR4 = mb.holReg.one[mbHreg_PPM3];    
   }
+}
+
+void mb_transmit_func(uint16_t lenght)
+{
+  DMA_SetCurrDataCounter(USARTx_TX_DMA_STREAM, lenght);  
+  DMA_ITConfig(USARTx_TX_DMA_STREAM, DMA_IT_TC, ENABLE); 
+  DMA_Cmd(USARTx_TX_DMA_STREAM, ENABLE);
 }
 
 void Delay(__IO uint32_t nTime)

@@ -4,6 +4,13 @@ void init_modbus(uint32_t speed);
 void init_ppm(void);
 void init_adc(void);
 
+#define PPM_TIMER                       TIM3       
+#define PPM_GPIO_PORT                   GPIOC      
+#define PPM_GPIO_PPM1                   GPIO_Pin_6
+#define PPM_GPIO_PPM2                   GPIO_Pin_8
+#define PPM_GPIO_PPM3                   GPIO_Pin_9
+
+
 #define USARTx                           USART2
 #define USARTx_CLK                       RCC_APB1Periph_USART2
 #define USARTx_CLK_INIT                  RCC_APB1PeriphClockCmd
@@ -21,7 +28,6 @@ void init_adc(void);
 #define USARTx_RX_GPIO_CLK               RCC_AHB1Periph_GPIOA
 #define USARTx_RX_SOURCE                 GPIO_PinSource3
 #define USARTx_RX_AF                     GPIO_AF_USART2
-
 
 #define USARTx_DR_ADDRESS                ((uint32_t)USART2 + 0x04) 
 
