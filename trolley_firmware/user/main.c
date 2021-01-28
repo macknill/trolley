@@ -47,7 +47,7 @@ int main(void)
       if (mb_poll() == 0);
     }
     GPIO_WriteBit(GPIOA, GPIO_Pin_5, mb.holReg.one[mbHreg_ST_LED]);//read register
-    mb.inpReg.two[mbIreg_ST_LED] = GPIO_ReadOutputDataBit(GPIOA, GPIO_Pin_5);//write register
+    mb.inpReg.one[mbIreg_ST_LED] = GPIO_ReadOutputDataBit(GPIOA, GPIO_Pin_5);//write register
     
     if (mb.holReg.one[mbHreg_PPM1] < 90) mb.holReg.one[mbHreg_PPM1] = 90;
     if (mb.holReg.one[mbHreg_PPM1] > 210) mb.holReg.one[mbHreg_PPM1] = 210;
@@ -58,6 +58,10 @@ int main(void)
     if (mb.holReg.one[mbHreg_PPM3] < 90) mb.holReg.one[mbHreg_PPM3] = 90;
     if (mb.holReg.one[mbHreg_PPM3] > 210) mb.holReg.one[mbHreg_PPM3] = 210;
     PPM_TIMER->CCR4 = mb.holReg.one[mbHreg_PPM3];    
+    
+    mb.inpReg.one[mbIreg_TestInc]++;
+    if (mb.holReg.one[mbHreg_ResetTestInc] > 0)
+      mb.inpReg.one[mbIreg_TestInc] = 0;
   }
 }
 
