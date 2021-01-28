@@ -21,18 +21,18 @@ class Jetsonmodbus:
         self.inpRegisters = list(repeat(0, self.registers_quantity))
         self.write_cmd = 0;
 
-    def write_reg(self, reg_addr, data)
-        if reg_addr < self.registers_quantity;
-            self.holdRegisters[reg_addr] = int(data);
+    def write_reg(self, reg_addr, reg_data):
+        if reg_addr < self.registers_quantity:
+            self.holdRegisters[reg_addr] = int(reg_data)
             self.write_cmd = 1;
-    def read_reg(self, reg_addr)
-        if reg_addr < self.registers_quantity;
+    def read_reg(self, reg_addr):
+        if reg_addr < self.registers_quantity:
             return self.inpRegisters[reg_addr]
 
     def loop(self):
         self.life = True
         while self.life:
-            self.registers = self.mb.read_registers(0, self.registers_quantity, 4)
+            self.inpRegisters = self.mb.read_registers(0, self.registers_quantity, 3)
             if self.write_cmd == 1:
                 self.write_cmd == 0
                 try:

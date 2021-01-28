@@ -15,7 +15,12 @@ print("start car drive!!!")
 try:
     while True:
         print (stmboard.read_reg(2))
-        time.sleep(10)
+        time.sleep(0.5)        
+        print(stmboard.inpRegisters)
+        stmboard.write_reg(3, 160)
+        time.sleep(0.5)        
+         
+
 except KeyboardInterrupt:
     stmboard.life = 0
     print("end code")
