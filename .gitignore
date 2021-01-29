@@ -1,3 +1,9 @@
-
+# https://www.iar.com/support/tech-notes/ide/which-files-should-be-version-controlled/
 *.SchDocPreview
 *.html
+*.ewt
+*.dep
+trolley_firmware/EWARM/STM32F401xx/Obj/*
+trolley_firmware/EWARM/STM32F401xx/List/*
+trolley_firmware/EWARM/STM32F401xx/Exe/*
+trolley_firmware/EWARM/settings/*
