@@ -184,7 +184,7 @@ void SysTick_Handler(void)
   TimingDelay_Decrement();
   
   // update lid angle
-  if(fabsf(lid_params.target_angle - lid_params.current_angle) <= lid_params.speed / 1000.0)
+  if((fabsf(lid_params.target_angle - lid_params.current_angle) <= lid_params.speed / 1000.0) || lid_params.speed == 0)
     lid_params.current_angle = lid_params.target_angle;
   else if(lid_params.target_angle > lid_params.current_angle)
     lid_params.current_angle += lid_params.speed / 1000.0;

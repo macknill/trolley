@@ -8,6 +8,7 @@
 
 static __IO uint32_t uwTimingDelay;
 RCC_ClocksTypeDef RCC_Clocks;
+extern TIM_OCInitTypeDef pwm_TIM_OCInitStructure;
 
 LidParams lid_params;
 
@@ -37,6 +38,7 @@ int main(void)
   mb.u8id = 1;
   init_modbus(115200); 
   init_ppm();
+  init_pwm();
   
   initVariables();
   
@@ -57,8 +59,13 @@ int main(void)
     PPM_TIMER->CCR3 = servo_angleToPPM(180 - lid_params.current_angle);
 
     // free PPM
-    PPM_TIMER->CCR4 = mb.holReg.one[mbHreg_PPM3];    
-
+    PPM_TIMER->CCR4 = mb.holReg.one[mbHreg_PPM3];
+    
+    // set PWM
+    setPWM1(mb.holReg.one[mbHreg_PWM1]);
+    setPWM2(mb.holReg.one[mbHreg_PWM2]);
+    setPWM3(mb.holReg.one[mbHreg_PWM3]);
+    setPWM4(mb.holReg.one[mbHreg_PWM4]);
   }
 }
 
@@ -94,6 +101,42 @@ void initVariables(void)
   lid_params.speed = 10;        // default safe speed
   lid_params.current_angle = 0;
   lid_params.target_angle = 0;  
+}
+
+void setPWM1(unsigned int value)
+{
+  if(value > 100)
+    value = 100;
+  
+  pwm_TIM_OCInitStructure.TIM_Pulse = (uint16_t) (((uint32_t) value * (PWM_PERIOD - 1)) / 100);
+  TIM_OC1Init(TIM1, &pwm_TIM_OCInitStructure);
+}
+
+void setPWM2(unsigned int value)
+{
+  if(value > 100)
+    value = 100;
+  
+  pwm_TIM_OCInitStructure.TIM_Pulse = (uint16_t) (((uint32_t) value * (PWM_PERIOD - 1)) / 100);
+  TIM_OC2Init(TIM1, &pwm_TIM_OCInitStructure);
+}
+
+void setPWM3(unsigned int value)
+{
+  if(value > 100)
+    value = 100;
+  
+  pwm_TIM_OCInitStructure.TIM_Pulse = (uint16_t) (((uint32_t) value * (PWM_PERIOD - 1)) / 100);
+  TIM_OC3Init(TIM1, &pwm_TIM_OCInitStructure);
+}
+
+void setPWM4(unsigned int value)
+{
+  if(value > 100)
+    value = 100;
+  
+  pwm_TIM_OCInitStructure.TIM_Pulse = (uint16_t) (((uint32_t) value * (PWM_PERIOD - 1)) / 100);
+  TIM_OC4Init(TIM1, &pwm_TIM_OCInitStructure);
 }
 
 #ifdef  USE_FULL_ASSERT

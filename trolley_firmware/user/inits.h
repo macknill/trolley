@@ -5,6 +5,7 @@ void init_sysclk(void);
 void init_gpio(void);
 void init_modbus(uint32_t speed);
 void init_ppm(void);
+void init_pwm(void);
 void init_adc(void);
 
 #define PPM_TIMER                       TIM3       
@@ -13,6 +14,7 @@ void init_adc(void);
 #define PPM_GPIO_PPM2                   GPIO_Pin_8      // Lid servo 2 (left)
 #define PPM_GPIO_PPM3                   GPIO_Pin_9
 
+#define PWM_PERIOD                      1000
 
 #define USARTx                           USART2
 #define USARTx_CLK                       RCC_APB1Periph_USART2

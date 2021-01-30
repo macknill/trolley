@@ -40,6 +40,11 @@ extern RCC_ClocksTypeDef RCC_Clocks;
 void TimingDelay_Decrement(void);
 void mb_transmit_func(uint16_t lenght);
 
+void setPWM1(unsigned int value);
+void setPWM2(unsigned int value);
+void setPWM3(unsigned int value);
+void setPWM4(unsigned int value);
+
 #endif /* __MAIN_H */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

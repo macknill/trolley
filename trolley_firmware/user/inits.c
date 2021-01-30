@@ -5,12 +5,13 @@
 #include "main.h"
 #include "misc.h"
 
-GPIO_InitTypeDef GPIO_InitStructure;
+TIM_OCInitTypeDef pwm_TIM_OCInitStructure;
 
 void init_gpio(void)
 {
   RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
-  
+
+  GPIO_InitTypeDef GPIO_InitStructure;  
   GPIO_InitStructure.GPIO_Pin = GPIO_Pin_5;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
   GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
@@ -169,10 +170,59 @@ void init_ppm(void)
   NVIC_Init(&NVIC_InitStructure);  */
 }
 
+void init_pwm(void)
+{
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);
+  //PA8,PA9,PA10,PA11 pwm output TIM1
+  GPIO_InitTypeDef GPIO_InitStructure;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
+  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_DOWN;  
+  GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8 | GPIO_Pin_9 | GPIO_Pin_10 | GPIO_Pin_11;
+  GPIO_Init(GPIOA, &GPIO_InitStructure);
+  
+  GPIO_PinAFConfig(GPIOA, GPIO_PinSource8, GPIO_AF_TIM1);
+  GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_TIM1); 
+  GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_TIM1);
+  GPIO_PinAFConfig(GPIOA, GPIO_PinSource11, GPIO_AF_TIM1);
+  
+  // Enable clock
+  RCC_APB1PeriphClockCmd(RCC_APB2Periph_TIM1, ENABLE);
+  
+  // Timer configuration
+  TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
+  TIM_TimeBaseStructure.TIM_Prescaler = 0;
+  TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
+  TIM_TimeBaseStructure.TIM_Period = (SystemCoreClock / PWM_PERIOD) - 1;
+  TIM_TimeBaseStructure.TIM_ClockDivision = 0;
+  TIM_TimeBaseStructure.TIM_RepetitionCounter = 0;
+  TIM_TimeBaseInit(TIM1, &TIM_TimeBaseStructure);
+  
+  // Channel 1, 2, 3 and 4 Configuration in PWM mode
+  pwm_TIM_OCInitStructure.TIM_OCMode = TIM_OCMode_PWM2;
+  pwm_TIM_OCInitStructure.TIM_OutputState = TIM_OutputState_Enable;
+  pwm_TIM_OCInitStructure.TIM_OutputNState = TIM_OutputNState_Disable;
+  pwm_TIM_OCInitStructure.TIM_OCPolarity = TIM_OCPolarity_Low;
+  pwm_TIM_OCInitStructure.TIM_OCIdleState = TIM_OCIdleState_Set;
+  pwm_TIM_OCInitStructure.TIM_Pulse = 0;
+  TIM_OC1Init(TIM1, &pwm_TIM_OCInitStructure);
 
+  pwm_TIM_OCInitStructure.TIM_Pulse = 0;
+  TIM_OC2Init(TIM1, &pwm_TIM_OCInitStructure);
 
+  pwm_TIM_OCInitStructure.TIM_Pulse = 0;
+  TIM_OC3Init(TIM1, &pwm_TIM_OCInitStructure);
 
+  pwm_TIM_OCInitStructure.TIM_Pulse = 0;
+  TIM_OC4Init(TIM1, &pwm_TIM_OCInitStructure);
 
+  // TIM1 counter enable
+  TIM_Cmd(TIM1, ENABLE);
+
+  // TIM1 Main Output Enable
+  TIM_CtrlPWMOutputs(TIM1, ENABLE);
+}
 
 
 
