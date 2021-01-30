@@ -1,3 +1,6 @@
+#ifndef _MODBUS_H
+#define _MODBUS_H
+
 #include <stdint.h>
 
 #define lowByte(w) ((uint8_t) ((w) & 0xff))
@@ -122,3 +125,5 @@ int8_t mb_poll(void);
 void mb_sendTxBuffer(void);
 uint16_t word(uint8_t high, uint8_t low);
 uint8_t mb_validateRequest(void);
+
+#endif

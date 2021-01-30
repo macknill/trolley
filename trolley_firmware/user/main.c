@@ -3,12 +3,17 @@
 #include "inits.h"
 #include "modbus.h"
 #include "mb_regs.h"
+#include "FS5109M.h"
+#include "datatypes.h"
 
 static __IO uint32_t uwTimingDelay;
 RCC_ClocksTypeDef RCC_Clocks;
 
+LidParams lid_params;
+
 /* Private function prototypes -----------------------------------------------*/
 static void Delay(__IO uint32_t nTime);
+void initVariables(void);
 
 /* Private functions ---------------------------------------------------------*/
 
@@ -17,10 +22,8 @@ static void Delay(__IO uint32_t nTime);
   * @param  None
   * @retval None
   */
-  volatile uint8_t lol = 0;
 int main(void)
 {
-  GPIO_InitTypeDef GPIO_InitStructure;
   //SysTick end of count event each 10ms
   
   RCC_GetClocksFreq(&RCC_Clocks);
@@ -33,11 +36,9 @@ int main(void)
   
   mb.u8id = 1;
   init_modbus(115200); 
-  mb.holReg.one[mbHreg_PPM1] = 150;
-  mb.holReg.one[mbHreg_PPM2] = 150;
-  mb.holReg.one[mbHreg_PPM3] = 150;
-  init_ppm(); 
+  init_ppm();
   
+  initVariables();
   
   while (1)
   {
@@ -48,20 +49,16 @@ int main(void)
     }
     GPIO_WriteBit(GPIOA, GPIO_Pin_5, mb.holReg.one[mbHreg_ST_LED]);//read register
     mb.inpReg.one[mbIreg_ST_LED] = GPIO_ReadOutputDataBit(GPIOA, GPIO_Pin_5);//write register
-    
-    if (mb.holReg.one[mbHreg_PPM1] < 90) mb.holReg.one[mbHreg_PPM1] = 90;
-    if (mb.holReg.one[mbHreg_PPM1] > 210) mb.holReg.one[mbHreg_PPM1] = 210;
-    PPM_TIMER->CCR1 = mb.holReg.one[mbHreg_PPM1];                       
-    if (mb.holReg.one[mbHreg_PPM2] < 90) mb.holReg.one[mbHreg_PPM2] = 90;
-    if (mb.holReg.one[mbHreg_PPM2] > 210) mb.holReg.one[mbHreg_PPM2] = 210;
-    PPM_TIMER->CCR3 = mb.holReg.one[mbHreg_PPM2];
-    if (mb.holReg.one[mbHreg_PPM3] < 90) mb.holReg.one[mbHreg_PPM3] = 90;
-    if (mb.holReg.one[mbHreg_PPM3] > 210) mb.holReg.one[mbHreg_PPM3] = 210;
+
+    // update Lid servos angle
+    lid_params.speed = mb.holReg.one[mbHreg_LidSpeed];
+    lid_params.target_angle = mb.holReg.one[mbHreg_LidAngle];
+    PPM_TIMER->CCR1 = servo_angleToPPM(lid_params.current_angle);
+    PPM_TIMER->CCR3 = servo_angleToPPM(180 - lid_params.current_angle);
+
+    // free PPM
     PPM_TIMER->CCR4 = mb.holReg.one[mbHreg_PPM3];    
-    
-    mb.inpReg.one[mbIreg_TestInc]++;
-    if (mb.holReg.one[mbHreg_ResetTestInc] > 0)
-      mb.inpReg.one[mbIreg_TestInc] = 0;
+
   }
 }
 
@@ -90,6 +87,13 @@ void TimingDelay_Decrement(void)
   { 
     uwTimingDelay--;
   }
+}
+
+void initVariables(void)
+{
+  lid_params.speed = 10;        // default safe speed
+  lid_params.current_angle = 0;
+  lid_params.target_angle = 0;  
 }
 
 #ifdef  USE_FULL_ASSERT

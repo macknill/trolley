@@ -18,7 +18,6 @@ void init_gpio(void)
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
   GPIO_Init(GPIOA, &GPIO_InitStructure);
   GPIO_WriteBit(GPIOA, GPIO_Pin_5, Bit_SET);
-
 }
 
 

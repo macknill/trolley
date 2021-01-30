@@ -28,12 +28,14 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
+#include <math.h>
 #include "stm32f4xx_it.h"
 #include "main.h"
 #include "modbus.h"
 #include "mb_regs.h"
 #include "inits.h"
-
+#include "datatypes.h"
+    
 /** @addtogroup Template_Project
   * @{
   */
@@ -42,6 +44,7 @@
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
+  extern LidParams lid_params;
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
@@ -179,6 +182,14 @@ void PendSV_Handler(void)
 void SysTick_Handler(void)
 {
   TimingDelay_Decrement();
+  
+  // update lid angle
+  if(fabsf(lid_params.target_angle - lid_params.current_angle) <= lid_params.speed / 1000.0)
+    lid_params.current_angle = lid_params.target_angle;
+  else if(lid_params.target_angle > lid_params.current_angle)
+    lid_params.current_angle += lid_params.speed / 1000.0;
+  else
+    lid_params.current_angle -= lid_params.speed / 1000.0;
 }
 
 /******************************************************************************/

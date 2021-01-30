@@ -1,3 +1,6 @@
+#ifndef _INIT_H
+#define _INIT_H
+
 void init_sysclk(void);
 void init_gpio(void);
 void init_modbus(uint32_t speed);
@@ -6,8 +9,8 @@ void init_adc(void);
 
 #define PPM_TIMER                       TIM3       
 #define PPM_GPIO_PORT                   GPIOC      
-#define PPM_GPIO_PPM1                   GPIO_Pin_6
-#define PPM_GPIO_PPM2                   GPIO_Pin_8
+#define PPM_GPIO_PPM1                   GPIO_Pin_6      // Lid servo 1 (right)
+#define PPM_GPIO_PPM2                   GPIO_Pin_8      // Lid servo 2 (left)
 #define PPM_GPIO_PPM3                   GPIO_Pin_9
 
 
@@ -54,3 +57,6 @@ void init_adc(void);
 #define USARTx_DMA_TX_IRQHandler         DMA1_Stream6_IRQHandler
 #define USARTx_DMA_RX_IRQn               DMA1_Stream5_IRQn
 #define USARTx_DMA_RX_IRQHandler         DMA1_Stream5_IRQHandler
+
+
+#endif
